@@ -3322,6 +3322,11 @@ int RGWHandler_REST_S3::postauth_init()
 {
   struct req_init_state *t = &s->init_state;
   bool relaxed_names = s->cct->_conf->rgw_relaxed_s3_bucket_names;
+  // Allow to read access for existent bucket with invalid name
+  if (!relaxed_names && (s->op != OP_PUT || s->op != OP_POST)) {
+    relaxed_names = true;
+  }
+  dout(0) << "post init: relaxed rule " << relaxed_names << " handler " << s->op << dendl;
 
   rgw_parse_url_bucket(t->url_bucket, s->user->user_id.tenant,
 		      s->bucket_tenant, s->bucket_name);
@@ -3372,6 +3377,11 @@ int RGWHandler_REST_S3::init(RGWRados *store, struct req_state *s,
   if (ret)
     return ret;
   bool relaxed_names = s->cct->_conf->rgw_relaxed_s3_bucket_names;
+  // Allow to read access for existent bucket with invalid name
+  if (!relaxed_names && (s->op != OP_PUT || s->op != OP_POST)) {
+    relaxed_names = true;
+  }
+  dout(0) << "init: relaxed rule " << relaxed_names << " handler " << s->op << dendl;
   if (!s->bucket_name.empty()) {
     ret = valid_s3_bucket_name(s->bucket_name, relaxed_names);
     if (ret)
