@@ -638,7 +638,7 @@ static inline int valid_s3_object_name(const string& name) {
   return 0;
 }
 
-static inline int valid_s3_bucket_name(const string& name, bool relaxed=false)
+static inline int valid_s3_bucket_name(const string& name, S3BucketNameRule rule=strict)
 {
   // This function enforces Amazon's spec for bucket names.
   // (The requirements, not the recommendations.)
@@ -653,7 +653,7 @@ static inline int valid_s3_bucket_name(const string& name, bool relaxed=false)
 
   // bucket names must start with a number, letter, or underscore
   if (!(isalpha(name[0]) || isdigit(name[0]))) {
-    if (!relaxed)
+    if (rule != relaxed)
       return -ERR_INVALID_BUCKET_NAME;
     else if (!(name[0] == '_' || name[0] == '.' || name[0] == '-'))
       return -ERR_INVALID_BUCKET_NAME;

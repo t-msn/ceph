@@ -1114,6 +1114,15 @@ int RGWPeriod::init(CephContext *_cct, RGWRados *_store, bool setup_obj)
   return read_info();
 }
 
+void RGWPeriodConfig::init(CephContext *cct)
+{
+  bool relaxed = cct->_conf->rgw_relaxed_s3_bucket_names;
+  // for backward-compatiblity, load name rule setting
+  ldout(cct, 0) << "ERROR: relaxed s3 bucket: " << relaxed << dendl;
+  if (relaxed) {
+    bucket_name_rule.rule = S3BucketNameRule::relaxed;
+  }
+}
 
 int RGWPeriod::get_zonegroup(RGWZoneGroup& zonegroup, const string& zonegroup_id) {
   map<string, RGWZoneGroup>::const_iterator iter;
@@ -4426,6 +4435,7 @@ bool RGWRados::zone_syncs_from(RGWZone& target_zone, RGWZone& source_zone)
 int RGWRados::init_complete()
 {
   int ret = realm.init(cct, this);
+  current_period.get_config().init(cct);
   if (ret < 0 && ret != -ENOENT) {
     ldout(cct, 0) << "failed reading realm info: ret "<< ret << " " << cpp_strerror(-ret) << dendl;
     return ret;

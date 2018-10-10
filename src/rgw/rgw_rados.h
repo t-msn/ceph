@@ -1613,15 +1613,49 @@ struct RGWPeriodMap
 };
 WRITE_CLASS_ENCODER(RGWPeriodMap)
 
+enum S3BucketNameRule {
+  relaxed,
+  strict,
+};
+
+struct RGWBucketNameRule {
+public:
+  S3BucketNameRule rule;
+
+  RGWBucketNameRule() :
+    rule(strict) {
+  }
+
+  void encode(bufferlist& bl) const {
+    ENCODE_START(1, 1, bl);
+    encode((uint32_t)rule, bl);
+    ENCODE_FINISH(bl);
+  }
+  void decode(bufferlist::const_iterator& bl) {
+    DECODE_START(1, bl);
+    uint32_t r;
+    decode(r, bl);
+    rule = (S3BucketNameRule)r;
+    DECODE_FINISH(bl);
+  }
+
+  void dump(Formatter *f) const;
+
+  void decode_json(JSONObj *obj);
+};
+WRITE_CLASS_ENCODER(RGWBucketNameRule)
+
 struct RGWPeriodConfig
 {
   RGWQuotaInfo bucket_quota;
   RGWQuotaInfo user_quota;
+  RGWBucketNameRule bucket_name_rule;
 
   void encode(bufferlist& bl) const {
     ENCODE_START(1, 1, bl);
     encode(bucket_quota, bl);
     encode(user_quota, bl);
+    encode(bucket_name_rule, bl);
     ENCODE_FINISH(bl);
   }
 
@@ -1629,8 +1663,11 @@ struct RGWPeriodConfig
     DECODE_START(1, bl);
     decode(bucket_quota, bl);
     decode(user_quota, bl);
+    decode(bucket_name_rule, bl);
     DECODE_FINISH(bl);
   }
+
+  void init(CephContext *cct);
 
   void dump(Formatter *f) const;
   void decode_json(JSONObj *obj);
@@ -2136,6 +2173,7 @@ class RGWRados : public AdminSocketHook
   friend class RGWBucketReshard;
   friend class BucketIndexLockGuard;
   friend class RGWCompleteMultipart;
+  friend class RGWHandler_REST_S3;
 
   static constexpr const char* admin_commands[4][3] = {
     { "cache list",

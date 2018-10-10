@@ -123,6 +123,8 @@ void usage()
   cout << "  global quota set           set global quota params\n";
   cout << "  global quota enable        enable a global quota\n";
   cout << "  global quota disable       disable a global quota\n";
+  cout << "  global bucket get          get a global config for bucket\n";
+  cout << "  global bucket set          set a global config for bucket\n";
   cout << "  realm create               create a new realm\n";
   cout << "  realm rm                   remove a realm\n";
   cout << "  realm get                  show realm info\n";
@@ -337,6 +339,8 @@ void usage()
   cout << "   --max-objects             specify max objects (negative value to disable)\n";
   cout << "   --max-size                specify max size (in B/K/M/G/T, negative value to disable)\n";
   cout << "   --quota-scope             scope of quota (bucket, user)\n";
+  cout << "\nGlobal bucket options:\n";
+  cout << "   --bucket-name-rule        name rule for bucket (S3, S3_Old, relaxed)\n";
   cout << "\nOrphans search options:\n";
   cout << "   --num-shards              num of shards to use for keeping the temporary scan info\n";
   cout << "   --orphan-stale-secs       num of seconds to wait before declaring an object to be an orphan (default: 86400)\n";
@@ -498,6 +502,8 @@ enum {
   OPT_GLOBAL_QUOTA_SET,
   OPT_GLOBAL_QUOTA_ENABLE,
   OPT_GLOBAL_QUOTA_DISABLE,
+  OPT_GLOBAL_GET_BUCKET_NAME_RULE,
+  OPT_GLOBAL_SET_BUCKET_NAME_RULE,
   OPT_SYNC_STATUS,
   OPT_ROLE_CREATE,
   OPT_ROLE_DELETE,
@@ -2703,6 +2709,7 @@ int main(int argc, const char **argv)
   string op_id;
   string op_mask_str;
   string quota_scope;
+  string bucket_name_rule;
   string object_version;
   string placement_id;
   list<string> tags;
@@ -2971,6 +2978,8 @@ int main(int argc, const char **argv)
       end_marker = val;
     } else if (ceph_argparse_witharg(args, i, &val, "--quota-scope", (char*)NULL)) {
       quota_scope = val;
+    } else if (ceph_argparse_witharg(args, i, &val, "--bucket-name-rule", (char*)NULL)) {
+      bucket_name_rule = val;
     } else if (ceph_argparse_witharg(args, i, &val, "--index-type", (char*)NULL)) {
       string index_type_str = val;
       bi_index_type = get_bi_index_type(index_type_str);
@@ -3208,6 +3217,8 @@ int main(int argc, const char **argv)
 			 OPT_PERIOD_GET_CURRENT, OPT_PERIOD_LIST,
 			 OPT_GLOBAL_QUOTA_GET, OPT_GLOBAL_QUOTA_SET,
 			 OPT_GLOBAL_QUOTA_ENABLE, OPT_GLOBAL_QUOTA_DISABLE,
+			 OPT_GLOBAL_GET_BUCKET_NAME_RULE,
+			 OPT_GLOBAL_SET_BUCKET_NAME_RULE,
 			 OPT_REALM_DELETE, OPT_REALM_GET, OPT_REALM_LIST,
 			 OPT_REALM_LIST_PERIODS,
 			 OPT_REALM_GET_DEFAULT,
@@ -3258,6 +3269,7 @@ int main(int argc, const char **argv)
 			 OPT_PERIOD_GET_CURRENT,
 			 OPT_PERIOD_LIST,
 			 OPT_GLOBAL_QUOTA_GET,
+			 OPT_GLOBAL_GET_BUCKET_NAME_RULE,
 			 OPT_SYNC_STATUS,
 			 OPT_ROLE_GET,
 			 OPT_ROLE_LIST,
@@ -3478,6 +3490,7 @@ int main(int argc, const char **argv)
                          max_size, max_objects,
                          have_max_size, have_max_objects);
           encode_json("bucket quota", period_config.bucket_quota, formatter);
+	  period_config.bucket_name_rule.rule = relaxed;
         } else if (quota_scope == "user") {
           set_quota_info(period_config.user_quota, opt_cmd,
                          max_size, max_objects,
@@ -3487,6 +3500,7 @@ int main(int argc, const char **argv)
           // if no scope is given for GET, print both
           encode_json("bucket quota", period_config.bucket_quota, formatter);
           encode_json("user quota", period_config.user_quota, formatter);
+          encode_json("bucket name rule", period_config.bucket_name_rule, formatter);
         } else {
           cerr << "ERROR: invalid quota scope specification. Please specify "
               "either --quota-scope=bucket, or --quota-scope=user" << std::endl;
@@ -3514,6 +3528,8 @@ int main(int argc, const char **argv)
 
         formatter->flush(cout);
       }
+      break;
+    case OPT_GLOBAL_SET_BUCKET_NAME_RULE:
       break;
     case OPT_REALM_CREATE:
       {

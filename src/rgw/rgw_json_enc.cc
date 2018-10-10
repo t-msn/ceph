@@ -592,6 +592,29 @@ void RGWQuotaInfo::decode_json(JSONObj *obj)
   JSONDecoder::decode_json("enabled", enabled, obj);
 }
 
+void RGWBucketNameRule::dump(Formatter *f) const
+{
+  switch (rule) {
+    case relaxed:
+      f->dump_string("bucket_name_rule", "relaxed");
+      break;
+    case strict:
+      f->dump_string("bukcet_name_rule", "strict");
+      break;
+  }
+}
+
+void RGWBucketNameRule::decode_json(JSONObj *obj)
+{
+  string r;
+  JSONDecoder::decode_json("bucket_name_rule", r, obj);
+  if (r == "relaxed") {
+    rule = relaxed;
+  } else if (r == "strict") {
+    rule = strict;
+  }
+}
+
 void rgw_data_placement_target::dump(Formatter *f) const
 {
   encode_json("data_pool", data_pool, f);

@@ -47,7 +47,7 @@ namespace rgw {
     ceph::construct_suspended};
 
   inline int valid_fs_bucket_name(const string& name) {
-    int rc = valid_s3_bucket_name(name, false /* relaxed */);
+    int rc = valid_s3_bucket_name(name, relaxed);
     if (rc != 0) {
       if (name.size() > 255)
         return -ENAMETOOLONG;

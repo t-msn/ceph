@@ -3321,12 +3321,12 @@ static int verify_mfa(RGWRados *store, RGWUserInfo *user, const string& mfa_str,
 int RGWHandler_REST_S3::postauth_init()
 {
   struct req_init_state *t = &s->init_state;
-  bool relaxed_names = s->cct->_conf->rgw_relaxed_s3_bucket_names;
+  S3BucketNameRule rule = store->current_period.get_config().bucket_name_rule.rule;
   // Allow to read access for existent bucket with invalid name
-  if (!relaxed_names && (s->op != OP_PUT || s->op != OP_POST)) {
-    relaxed_names = true;
+  if (rule != relaxed && (s->op != OP_PUT || s->op != OP_POST)) {
+    rule = relaxed;
   }
-  dout(0) << "post init: relaxed rule " << relaxed_names << " handler " << s->op << dendl;
+  dout(0) << "post init: relaxed rule " << rule << " handler " << s->op << dendl;
 
   rgw_parse_url_bucket(t->url_bucket, s->user->user_id.tenant,
 		      s->bucket_tenant, s->bucket_name);
@@ -3339,7 +3339,7 @@ int RGWHandler_REST_S3::postauth_init()
   if (ret)
     return ret;
   if (!s->bucket_name.empty()) {
-    ret = valid_s3_bucket_name(s->bucket_name, relaxed_names);
+    ret = valid_s3_bucket_name(s->bucket_name, rule);
     if (ret)
       return ret;
     ret = validate_object_name(s->object.name);
@@ -3353,7 +3353,7 @@ int RGWHandler_REST_S3::postauth_init()
     ret = rgw_validate_tenant_name(s->src_tenant_name);
     if (ret)
       return ret;
-    ret = valid_s3_bucket_name(s->src_bucket_name, relaxed_names);
+    ret = valid_s3_bucket_name(s->src_bucket_name, rule);
     if (ret)
       return ret;
   }
@@ -3376,14 +3376,14 @@ int RGWHandler_REST_S3::init(RGWRados *store, struct req_state *s,
   ret = rgw_validate_tenant_name(s->bucket_tenant);
   if (ret)
     return ret;
-  bool relaxed_names = s->cct->_conf->rgw_relaxed_s3_bucket_names;
+  S3BucketNameRule rule = store->current_period.get_config().bucket_name_rule.rule;
   // Allow to read access for existent bucket with invalid name
-  if (!relaxed_names && (s->op != OP_PUT || s->op != OP_POST)) {
-    relaxed_names = true;
+  if (rule != relaxed && (s->op != OP_PUT || s->op != OP_POST)) {
+    rule = relaxed;
   }
-  dout(0) << "init: relaxed rule " << relaxed_names << " handler " << s->op << dendl;
+  dout(0) << "init: relaxed rule " << rule << " handler " << s->op << dendl;
   if (!s->bucket_name.empty()) {
-    ret = valid_s3_bucket_name(s->bucket_name, relaxed_names);
+    ret = valid_s3_bucket_name(s->bucket_name, rule);
     if (ret)
       return ret;
     ret = validate_object_name(s->object.name);
