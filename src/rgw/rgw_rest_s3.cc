@@ -3323,10 +3323,11 @@ int RGWHandler_REST_S3::postauth_init()
   struct req_init_state *t = &s->init_state;
   S3BucketNameRule rule = store->current_period.get_config().bucket_name_rule.rule;
   // Allow to read access for existent bucket with invalid name
-  if (rule != relaxed && (s->op != OP_PUT || s->op != OP_POST)) {
+  if (rule != relaxed && (s->op_type != RGW_OP_CREATE_BUCKET)) {
     rule = relaxed;
+    dout(0) << "post init: rule is relaxed" << dendl;
   }
-  dout(0) << "post init: relaxed rule " << rule << " handler " << s->op << dendl;
+  dout(0) << "post init: relaxed rule " << rule << " handler " << s->op_type << dendl;
 
   rgw_parse_url_bucket(t->url_bucket, s->user->user_id.tenant,
 		      s->bucket_tenant, s->bucket_name);
@@ -3377,11 +3378,11 @@ int RGWHandler_REST_S3::init(RGWRados *store, struct req_state *s,
   if (ret)
     return ret;
   S3BucketNameRule rule = store->current_period.get_config().bucket_name_rule.rule;
-  // Allow to read access for existent bucket with invalid name
-  if (rule != relaxed && (s->op != OP_PUT || s->op != OP_POST)) {
+  // Allow to access for existent bucket with invalid name
+  if (rule != relaxed && (s->op_type != RGW_OP_CREATE_BUCKET)) {
     rule = relaxed;
   }
-  dout(0) << "init: relaxed rule " << rule << " handler " << s->op << dendl;
+  dout(0) << "init: relaxed rule " << rule << " handler " << s->op_type << dendl;
   if (!s->bucket_name.empty()) {
     ret = valid_s3_bucket_name(s->bucket_name, rule);
     if (ret)

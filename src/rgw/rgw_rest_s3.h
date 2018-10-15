@@ -638,7 +638,7 @@ static inline int valid_s3_object_name(const string& name) {
   return 0;
 }
 
-static inline int valid_s3_bucket_name(const string& name, S3BucketNameRule rule=strict)
+static inline int valid_s3_bucket_name(const string& name, S3BucketNameRule rule=strict_old)
 {
   // This function enforces Amazon's spec for bucket names.
   // (The requirements, not the recommendations.)
@@ -646,29 +646,56 @@ static inline int valid_s3_bucket_name(const string& name, S3BucketNameRule rule
   if (len < 3) {
     // Name too short
     return -ERR_INVALID_BUCKET_NAME;
-  } else if (len > 255) {
+  } else if (rule == strict_old && len > 255) {
     // Name too long
     return -ERR_INVALID_BUCKET_NAME;
-  }
-
-  // bucket names must start with a number, letter, or underscore
-  if (!(isalpha(name[0]) || isdigit(name[0]))) {
-    if (rule != relaxed)
-      return -ERR_INVALID_BUCKET_NAME;
-    else if (!(name[0] == '_' || name[0] == '.' || name[0] == '-'))
-      return -ERR_INVALID_BUCKET_NAME;
-  }
-
-  for (const char *s = name.c_str(); *s; ++s) {
-    char c = *s;
-    if (isdigit(c) || (c == '.'))
-      continue;
-    if (isalpha(c))
-      continue;
-    if ((c == '-') || (c == '_'))
-      continue;
-    // Invalid character
+  } else if (rule == strict && len > 63) {
     return -ERR_INVALID_BUCKET_NAME;
+  }
+
+  // Rule for first character
+  if (rule == strict) {
+    if (!islower(name[0] || isdigit(name[0])))
+      return -ERR_INVALID_BUCKET_NAME;
+  } else if (rule == strict_old) {
+    if (!(isalpha(name[0]) || isdigit(name[0])))
+      return -ERR_INVALID_BUCKET_NAME;
+  } else {
+    if (!(isalpha(name[0]) || isdigit(name[0]) ||
+	  name[0] == '_' || name[0] == '.' || name[0] == '-'))
+      return -ERR_INVALID_BUCKET_NAME;
+  }
+
+  // Rule for other characters
+  if (rule == strict) {
+    for (const char *s = (name.c_str() + 1); *s; ++s) {
+      // Only digit, lower caracter, hyphen and comma is allowed
+      // hyphen and comma cannot be adjacent
+      if (isdigit(*s) || islower(*s))
+	continue;
+      if (((*s == '-') || (*s == '.'))) {
+	if ((*(s-1) != '-') && (*(s-1) != '.')) {
+	  continue;
+	}
+      }
+      // Invalid character
+      return -ERR_INVALID_BUCKET_NAME;
+    }
+    // Name must not end with hyphen or comma
+    if (name[len-1] == '-' || name [len-1] == '.') {
+      return -ERR_INVALID_BUCKET_NAME;
+    }
+  } else {
+    for (const char *s = (name.c_str() + 1); *s; ++s) {
+      if (isdigit(*s) || (*s == '.'))
+        continue;
+      if (isalpha(*s))
+        continue;
+      if ((*s == '-') || (*s == '_'))
+        continue;
+      // Invalid character
+      return -ERR_INVALID_BUCKET_NAME;
+    }
   }
 
   if (looks_like_ip_address(name.c_str()))

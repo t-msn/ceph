@@ -598,6 +598,9 @@ void RGWBucketNameRule::dump(Formatter *f) const
     case relaxed:
       f->dump_string("bucket_name_rule", "relaxed");
       break;
+    case strict_old:
+      f->dump_string("bukcet_name_rule", "strict_old");
+      break;
     case strict:
       f->dump_string("bukcet_name_rule", "strict");
       break;
@@ -610,6 +613,8 @@ void RGWBucketNameRule::decode_json(JSONObj *obj)
   JSONDecoder::decode_json("bucket_name_rule", r, obj);
   if (r == "relaxed") {
     rule = relaxed;
+  } else if (r == "strict_old") {
+    rule = strict_old;
   } else if (r == "strict") {
     rule = strict;
   }

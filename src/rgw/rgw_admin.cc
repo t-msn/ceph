@@ -3490,7 +3490,7 @@ int main(int argc, const char **argv)
                          max_size, max_objects,
                          have_max_size, have_max_objects);
           encode_json("bucket quota", period_config.bucket_quota, formatter);
-	  period_config.bucket_name_rule.rule = relaxed;
+	  period_config.bucket_name_rule.rule = strict;
         } else if (quota_scope == "user") {
           set_quota_info(period_config.user_quota, opt_cmd,
                          max_size, max_objects,

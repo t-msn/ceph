@@ -1615,6 +1615,7 @@ WRITE_CLASS_ENCODER(RGWPeriodMap)
 
 enum S3BucketNameRule {
   relaxed,
+  strict_old,
   strict,
 };
 
@@ -1623,7 +1624,7 @@ public:
   S3BucketNameRule rule;
 
   RGWBucketNameRule() :
-    rule(strict) {
+    rule(strict_old) {
   }
 
   void encode(bufferlist& bl) const {

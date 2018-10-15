@@ -529,7 +529,7 @@ $extra_conf
         rgw crypt s3 kms encryption keys = testkey-1=YmluCmJvb3N0CmJvb3N0LWJ1aWxkCmNlcGguY29uZgo= testkey-2=aWIKTWFrZWZpbGUKbWFuCm91dApzcmMKVGVzdGluZwo=
         rgw crypt require ssl = false
         rgw lc debug interval = 10
-				rgw relaxed s3 bucket names = true
+				rgw relaxed s3 bucket names = false
         log file = $CEPH_OUT_DIR/rgw.log
 
 [mds]
